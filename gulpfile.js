@@ -1,5 +1,5 @@
 var del = require('del');
-var buildProduction = require('utilities.env.production');
+var buildProduction = require('utilities.env.production'); // Tells which kind of environment we are using
 var utilities = require('gulp-util');
 var concat = require('gulp-concat');
 
@@ -26,14 +26,14 @@ gulp.task('jsBrowserify', ['concatInterface'], function(){
 // Minification task. It's The process of removing all unnecessary characters in JS files
 var uglify = require('gulp-uglify');
 
-gulp.task("minifyScripts", ["jsBrowserify"], function(){
-  return gulp.src("./build/js/app.js")
+gulp.task("minifyScripts", ["jsBrowserify"], function(){ // jsBrowserify becomes a dependency of our Minification task
+  return gulp.src("./build/js/app.js") // app.js is minified after it was browserified
      .pipe(uglify())
      .pipe(gulp.dest("./build/js"));
 });
 
 // Clean task
-gulp.task('clean', function() {
+gulp.task('clean', function() { // A task to clean up our environment before we make a build task
   return del(['build', 'tmp']); // We pass del an array of the paths to delete and it removes them
 });
 
@@ -46,10 +46,11 @@ gulp.task('build', function(){
   }
 });
 
+// jsHint task
 var jshint = require('gulp-jshint');
 
 gulp.task('jshint', function() {
-  gulp.src(['js/*.js']);
+  gulp.src(['js/*.js'])
   .pipe(jshint())
   .pipe(jshint.reporter('default'));
 });
