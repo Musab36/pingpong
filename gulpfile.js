@@ -42,7 +42,7 @@ gulp.task('build', function(){
   if (buildProduction) {
     gulp.start('minifyScripts'); // gulp.start is used  to trigger tasks based on conditional statements
   } else {
-    gulp.start('jsBrowserify');
+    gulp.start('bower');
   }
 });
 
@@ -54,3 +54,33 @@ gulp.task('jshint', function() {
   .pipe(jshint())
   .pipe(jshint.reporter('default'));
 });
+
+// Bower files task
+var lib = require('bower-files')({
+  "overrides":{
+    "bootstrap" : {
+      "main": [
+        "less/bootstrap.less",
+        "dist/css/bootstrap.css",
+        "dist/js/bootstrap.js"
+      ]
+    }
+  }
+});
+
+gulp.task('bowerJS', function(){ // Our task
+  return gulp.src(lib.ext('js').files) // We are filtering out only the .js files by using the ext method built into bower-files.
+  .pipe(concat(vendor.min.js)) // concatenated and minified file
+  .pipe(uglify())
+  .pipe(gulp.dest('./build/js')); // We put the finished file into our build/js directory.
+});
+
+
+gulp.task('bowerCSS', function(){
+  return gulp.src(lib.ext('css').files))
+  .pipe(concat('vendor.css'))
+  .pipe(uglify())
+  .pipe(gulp.dest('./build/css'));
+});
+
+gulp.task('bower', ['bowerJS', 'bowerCSS']);
