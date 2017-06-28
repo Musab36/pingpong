@@ -1,7 +1,24 @@
 var del = require('del');
-var buildProduction = require('utilities.env.production'); // Tells which kind of environment we are using
+//var buildProduction = require('utilities.env.production'); // Tells which kind of environment we are using
 var utilities = require('gulp-util');
 var concat = require('gulp-concat');
+var browserify = require('browserify');
+var source = require('vinyl-source-stream');
+var gulp = require('gulp');
+var uglify = require('gulp-uglify');
+var jshint = require('gulp-jshint');
+var lib = require('bower-files')({
+  "overrides":{
+    "bootstrap" : {
+      "main": [
+        "less/bootstrap.less",
+        "dist/css/bootstrap.css",
+        "dist/js/bootstrap.js"
+      ]
+    }
+  }
+});
+var browserSync = require('browser-sync').create();
 
 // Concat task
 gulp.task('concatInterface', function(){
@@ -11,11 +28,6 @@ gulp.task('concatInterface', function(){
 });
 
  // Browserify task
-
-var browserify = require('browserify');
-var source = require('vinyl-source-stream');
-var gulp = require('gulp');
-
 gulp.task('jsBrowserify', ['concatInterface'], function(){
   return browserify({ entries: ['./tmp/allConcat.js'] }) // File to be browserified
      .bundle() // Something built into Browserify package
@@ -24,8 +36,6 @@ gulp.task('jsBrowserify', ['concatInterface'], function(){
 });
 
 // Minification task. It's The process of removing all unnecessary characters in JS files
-var uglify = require('gulp-uglify');
-
 gulp.task("minifyScripts", ["jsBrowserify"], function(){ // jsBrowserify becomes a dependency of our Minification task
   return gulp.src("./build/js/app.js") // app.js is minified after it was browserified
      .pipe(uglify())
@@ -42,45 +52,61 @@ gulp.task('build', function(){
   if (buildProduction) {
     gulp.start('minifyScripts'); // gulp.start is used  to trigger tasks based on conditional statements
   } else {
-    gulp.start('bower');
+    gulp.start('jsBrowserify');
   }
+  gulp.start('bower');
 });
 
 // jsHint task
-var jshint = require('gulp-jshint');
-
 gulp.task('jshint', function() {
   gulp.src(['js/*.js'])
   .pipe(jshint())
   .pipe(jshint.reporter('default'));
 });
 
-// Bower files task
-var lib = require('bower-files')({
-  "overrides":{
-    "bootstrap" : {
-      "main": [
-        "less/bootstrap.less",
-        "dist/css/bootstrap.css",
-        "dist/js/bootstrap.js"
-      ]
-    }
-  }
-});
-
-gulp.task('bowerJS', function(){ // Our task
-  return gulp.src(lib.ext('js').files) // We are filtering out only the .js files by using the ext method built into bower-files.
-  .pipe(concat(vendor.min.js)) // concatenated and minified file
+// BowerJs task
+gulp.task('bowerJS', function() { // Our bowerJSS task
+   return gulp.src(lib.ext('js').files) // The extension of the js files, gulp.src pulls in the javascript files,filtering out the .js files
+  .pipe(concat('vendor.min.js')) // concatenated and minified vendor.js file
   .pipe(uglify())
-  .pipe(gulp.dest('./build/js')); // We put the finished file into our build/js directory.
+  .pipe(gulp.dest('./build/js')); // Location of the vendor.js file
 });
 
+ // BowerCSS task;
+ gulp.task('bowerCSS', function() {
+   return gulp.src(lib.ext('css').files)
+   .pipe(concat('vendor.css'))
+   .pipe(gulp.dest('./build/css'));
+ });
 
-gulp.task('bowerCSS', function(){
-  return gulp.src(lib.ext('css').files))
-  .pipe(concat('vendor.css'))
-  .pipe(uglify())
-  .pipe(gulp.dest('./build/css'));
-});
-
+// Combination of bowerJS and bowerCSS
 gulp.task('bower', ['bowerJS', 'bowerCSS']);
+
+// Server begins here
+// BrowerSync task
+gulp.task('server', function() {
+  browserSync.init({ // browserSync initialized and launches the local server
+     server: {
+       baseDir: "./", // The directory where the local server will be launched from
+       index: "index.html" // The entry point where we want to start our app
+     }
+  });
+  gulp.watch(['js/*.js'], ['jsBuild']); // We are watching the js files and if they change, jsBuild is run
+  gulp.watch(['bower.json'], ['bowerBuild']); // Bower files are watched for changes
+  gulp.watch(['*.html'], ['htmlBuild']); // Watches html pages for changes
+});
+
+// jsBuild task with an array of dependency tasks that need to be run whenever any of the js files change.
+gulp.task('jsBuild', ['jsBrowserify', 'jshint'], function() {
+   browserSync.reload(); // Reloads the browser
+});
+
+// bowerBuild task to watch the bower files for changes
+gulp.task('bowerBuild', ['bower'], function() {
+  browserSync.reload();
+});
+
+// htmlBuild task
+gulp.task('htmlBuild', function() {
+  browserSync.reload();
+});
