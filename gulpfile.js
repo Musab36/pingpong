@@ -19,7 +19,7 @@ var lib = require('bower-files')({
   }
 });
 var browserSync = require('browser-sync').create();
-var sass = reuire('gulp-sass');
+var sass = require('gulp-sass');
 var sourcemaps = require('gulp-sourcemaps');
 
 // Concat task
@@ -117,10 +117,10 @@ gulp.task('htmlBuild', function() {
 
 // cssBuild task with sass and soursemaps
 gulp.task('cssBuild', function() { // This task loads all source files inside of our scss folder with the extension .scss.
-  soursemaps.init() // sourcemaps.init method processes scss files
+  sourcemaps.init() // sourcemaps.init method processes scss files
     return gulp.src(['./scss/*.scss'])
-    .pipe(sass()) // The sass method translates our files into normal CSS,
-    .pipe(soursemaps.write())
+    .pipe(sass()) // The sass method translates our files into normal CSS
+    .pipe(sourcemaps.write())
     .pipe(gulp.dest('./build/css'))
-    .pipe(bowerSync.stream()); // We are auto-injecting our new CSS into the browser.
+    .pipe(browserSync.stream()); // We are auto-injecting our new CSS into the browser.
 });
