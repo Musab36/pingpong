@@ -19,6 +19,8 @@ var lib = require('bower-files')({
   }
 });
 var browserSync = require('browser-sync').create();
+var sass = reuire('gulp-sass');
+var sourcemaps = require('gulp-sourcemaps');
 
 // Concat task
 gulp.task('concatInterface', function(){
@@ -55,6 +57,7 @@ gulp.task('build', function(){
     gulp.start('jsBrowserify');
   }
   gulp.start('bower');
+  gulp.start('cssBuild');
 });
 
 // jsHint task
@@ -94,6 +97,7 @@ gulp.task('server', function() {
   gulp.watch(['js/*.js'], ['jsBuild']); // We are watching the js files and if they change, jsBuild is run
   gulp.watch(['bower.json'], ['bowerBuild']); // Bower files are watched for changes
   gulp.watch(['*.html'], ['htmlBuild']); // Watches html pages for changes
+  gulp.watch(['./scss*.scss'], [['cssBuild']]); // A watcher for changes in scss files
 });
 
 // jsBuild task with an array of dependency tasks that need to be run whenever any of the js files change.
@@ -109,4 +113,14 @@ gulp.task('bowerBuild', ['bower'], function() {
 // htmlBuild task
 gulp.task('htmlBuild', function() {
   browserSync.reload();
+});
+
+// cssBuild task with sass and soursemaps
+gulp.task('cssBuild', function() { // This task loads all source files inside of our scss folder with the extension .scss.
+  soursemaps.init() // sourcemaps.init method processes scss files
+    return gulp.src(['./scss/*.scss'])
+    .pipe(sass()) // The sass method translates our files into normal CSS,
+    .pipe(soursemaps.write())
+    .pipe(gulp.dest('./build/css'))
+    .pipe(bowerSync.stream()); // We are auto-injecting our new CSS into the browser.
 });
